@@ -77,6 +77,10 @@
   <label>Ready-to-use Performance Link</label>
   <textarea id="output" readonly></textarea>
 
+  <button id="copyBtn" onclick="copyLink()">📋 Copy Link</button>
+  <p id="status" style="opacity:0.7;"></p>
+
+
   <script>
     function generate() {
       const base = document.getElementById("base").value.trim();
