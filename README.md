@@ -121,7 +121,7 @@ https://USERNAME.github.io/MetaPlaylist/
 &edit=https://docs.google.com/spreadsheets/d/XXXXXXXX/edit
 ```
 
-> Note: All parameters are automatically URL-encoded when generated via the helper tool.
+> Note: All parameters are automatically URL-encoded when generated via the [helper tool](https://adrianartacho.github.io/MetaPlaylist/helper.html).
 
 ---
 
@@ -137,9 +137,9 @@ https://USERNAME.github.io/MetaPlaylist/
 
 ---
 
-## ✏️ `helper.html` — Link Generator
+## ✏️ `[helper.html](https://adrianartacho.github.io/MetaPlaylist/helper.html)` — Link Generator
 
-The helper is a **small authoring tool** that generates a fully encoded, performance-ready MetaPlaylist link.
+The [helper](https://adrianartacho.github.io/MetaPlaylist/helper.html) is a **small authoring tool** that generates a fully encoded, performance-ready MetaPlaylist link.
 
 ### What It Solves
 
