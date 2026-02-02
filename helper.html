@@ -82,22 +82,26 @@
       const base = document.getElementById("base").value.trim();
       const title = document.getElementById("title").value.trim();
       const csv = document.getElementById("csv").value.trim();
-      const edit = document.getElementById("edit").value.trim();
-
+      const editRaw = document.getElementById("edit").value.trim();
+  
       if (!base || !csv) {
         alert("Base URL and CSV URL are required.");
         return;
       }
-
+  
+      // Strip fragment (#...) because it will be lost anyway
+      const edit = editRaw.split("#")[0];
+  
       const params = new URLSearchParams();
       if (title) params.set("title", title);
       if (csv) params.set("csv", csv);
       if (edit) params.set("edit", edit);
-
+  
       const finalUrl = base.replace(/\/$/, "") + "/?" + params.toString();
       document.getElementById("output").value = finalUrl;
     }
   </script>
+
 
 </body>
 </html>
