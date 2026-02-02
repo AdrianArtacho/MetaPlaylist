@@ -6,6 +6,8 @@ const params = new URLSearchParams(window.location.search);
 const csvUrl = params.get("csv");
 const title = params.get("title");
 
+const editUrl = params.get("edit");
+
 // UI
 const tableBody = document.querySelector("#playlist tbody");
 const embed = document.getElementById("embed");
