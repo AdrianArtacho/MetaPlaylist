@@ -1,7 +1,12 @@
+// ==========================
+// Meta-Playlist Controller
+// ==========================
+
 const params = new URLSearchParams(window.location.search);
 const csvUrl = params.get("csv");
 const title = params.get("title");
 
+// UI
 const tableBody = document.querySelector("#playlist tbody");
 const embed = document.getElementById("embed");
 const pageTitle = document.getElementById("pageTitle");
@@ -10,14 +15,20 @@ const openSpotifyBtn = document.getElementById("openSpotify");
 const shuffleBtn = document.getElementById("shuffleBtn");
 const clearChecksBtn = document.getElementById("clearChecks");
 
+// State
 let spotifyPlaylist = null;
 let rowsData = [];
 let selectedIndex = 0;
+
 let shuffleMode = localStorage.getItem("shuffleMode") === "true";
 let playedSet = new Set(JSON.parse(localStorage.getItem("playedSet") || "[]"));
 
-shuffleBtn.textContent = shuffleMode ? "🔀 Shuffle ON" : "🔀 Shuffle OFF";
+let ytPlayer = null;
+let spotifyEmbed = null;
+let mediaUnlocked = false;
 
+// Init
+shuffleBtn.textContent = shuffleMode ? "🔀 Shuffle ON" : "🔀 Shuffle OFF";
 if (title) pageTitle.textContent = decodeURIComponent(title);
 
 if (!csvUrl) {
@@ -34,6 +45,10 @@ fetch(csvUrl)
     highlightRow();
   });
 
+// ==========================
+// CSV
+// ==========================
+
 function parseCSV(text) {
   const lines = text.split("\n").map(l => l.trim()).filter(Boolean);
   const headers = lines.shift().split(",");
@@ -46,6 +61,10 @@ function parseCSV(text) {
   });
 }
 
+// ==========================
+// Platform Detection
+// ==========================
+
 function detectPlatform(link) {
   if (!link) return "Link";
   if (link.includes("spotify.com/playlist")) return "SpotifyPlaylist";
@@ -55,6 +74,10 @@ function detectPlatform(link) {
   if (link.includes("drive.google.com")) return "GDrive";
   return "Link";
 }
+
+// ==========================
+// Render
+// ==========================
 
 function renderTable() {
   tableBody.innerHTML = "";
@@ -90,6 +113,7 @@ function renderTable() {
 
     playBtn.onclick = (e) => {
       e.stopPropagation();
+      unlockMedia();
       playRow(i);
     };
 
@@ -108,6 +132,10 @@ function highlightRow() {
   }
 }
 
+// ==========================
+// Played State
+// ==========================
+
 function togglePlayed(i, tr, checkbox) {
   if (checkbox.checked) {
     playedSet.add(i);
@@ -119,54 +147,102 @@ function togglePlayed(i, tr, checkbox) {
   localStorage.setItem("playedSet", JSON.stringify([...playedSet]));
 }
 
-function playRow(i) {
-  const row = rowsData[i];
-  if (!row) return;
-
-  const platform = detectPlatform(row.link);
-  embed.innerHTML = "";
-
-  markPlayed(i);
-
-  if (platform === "YouTube") {
-    const videoId = extractYouTubeID(row.link);
-    embed.innerHTML = `
-      <iframe width="560" height="315"
-        src="https://www.youtube.com/embed/${videoId}?autoplay=1"
-        frameborder="0"
-        allow="autoplay; encrypted-media"
-        allowfullscreen>
-      </iframe>
-    `;
-  }
-
-  else if (platform === "SpotifyTrack") {
-    const trackId = row.link.split("/track/")[1]?.split("?")[0];
-    embed.innerHTML = `
-      <iframe style="border-radius:12px"
-        src="https://open.spotify.com/embed/track/${trackId}"
-        width="100%" height="152"
-        frameborder="0"
-        allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture">
-      </iframe>
-    `;
-  }
-
-  else if (platform === "SpotifyPlaylist") {
-    window.open(row.link, "_blank");
-  }
-
-  else {
-    window.open(row.link, "_blank");
-  }
-}
-
 function markPlayed(i) {
   playedSet.add(i);
   localStorage.setItem("playedSet", JSON.stringify([...playedSet]));
   renderTable();
   highlightRow();
 }
+
+// ==========================
+// Playback
+// ==========================
+
+function playRow(i) {
+  const row = rowsData[i];
+  if (!row) return;
+
+  const platform = detectPlatform(row.link);
+
+  ytPlayer = null;
+  spotifyEmbed = null;
+  embed.innerHTML = "";
+
+  markPlayed(i);
+
+  // ---- YouTube ----
+  if (platform === "YouTube") {
+    const videoId = extractYouTubeID(row.link);
+    embed.innerHTML = `
+      <iframe id="ytplayer"
+        width="560"
+        height="315"
+        src="https://www.youtube.com/embed/${videoId}?enablejsapi=1"
+        frameborder="0"
+        allow="autoplay; encrypted-media"
+        allowfullscreen>
+      </iframe>
+    `;
+    ytPlayer = document.getElementById("ytplayer");
+  }
+
+  // ---- Spotify Track ----
+  else if (platform === "SpotifyTrack") {
+    const trackId = row.link.split("/track/")[1]?.split("?")[0];
+    embed.innerHTML = `
+      <iframe id="spotifyPlayer"
+        style="border-radius:12px"
+        src="https://open.spotify.com/embed/track/${trackId}"
+        width="100%" height="152"
+        frameborder="0"
+        allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture">
+      </iframe>
+    `;
+    spotifyEmbed = document.getElementById("spotifyPlayer");
+  }
+
+  // ---- Spotify Playlist ----
+  else if (platform === "SpotifyPlaylist") {
+    window.open(row.link, "_blank");
+  }
+
+  // ---- Everything else ----
+  else {
+    window.open(row.link, "_blank");
+  }
+}
+
+// ==========================
+// Media Control
+// ==========================
+
+function unlockMedia() {
+  mediaUnlocked = true;
+}
+
+function togglePlayback() {
+  // YouTube play/pause toggle
+  if (ytPlayer) {
+    ytPlayer.contentWindow.postMessage(
+      JSON.stringify({
+        event: "command",
+        func: "playVideo",
+        args: []
+      }),
+      "*"
+    );
+    return;
+  }
+
+  // Spotify best-effort focus (user can space/click inside)
+  if (spotifyEmbed) {
+    spotifyEmbed.focus();
+  }
+}
+
+// ==========================
+// Helpers
+// ==========================
 
 function extractYouTubeID(url) {
   if (url.includes("youtu.be")) return url.split("/").pop();
@@ -189,7 +265,10 @@ function getNextIndex() {
   return unplayed[Math.floor(Math.random() * unplayed.length)];
 }
 
+// ==========================
 // Controls
+// ==========================
+
 shuffleBtn.onclick = () => {
   shuffleMode = !shuffleMode;
   localStorage.setItem("shuffleMode", shuffleMode);
@@ -211,36 +290,52 @@ openSpotifyBtn.onclick = () => {
   }
 };
 
+// ==========================
 // Keyboard
+// ==========================
+
 document.addEventListener("keydown", (e) => {
   if (e.target.tagName === "INPUT") return;
 
+  // Down
   if (e.key === "ArrowDown") {
     selectedIndex = Math.min(selectedIndex + 1, rowsData.length - 1);
     highlightRow();
   }
 
+  // Up
   if (e.key === "ArrowUp") {
     selectedIndex = Math.max(selectedIndex - 1, 0);
     highlightRow();
   }
 
+  // Enter = play
   if (e.key === "Enter") {
+    unlockMedia();
     playRow(selectedIndex);
   }
 
+  // S = shuffle
   if (e.key.toLowerCase() === "s") {
     shuffleBtn.click();
   }
 
+  // C = clear
   if (e.key.toLowerCase() === "c") {
     clearChecksBtn.click();
   }
 
+  // Space = play/pause or next
   if (e.key === " ") {
     e.preventDefault();
-    selectedIndex = getNextIndex();
-    highlightRow();
-    playRow(selectedIndex);
+    unlockMedia();
+
+    if (ytPlayer || spotifyEmbed) {
+      togglePlayback();
+    } else {
+      selectedIndex = getNextIndex();
+      highlightRow();
+      playRow(selectedIndex);
+    }
   }
 });
