@@ -218,6 +218,19 @@ function playRow(i) {
 // Media Control
 // ==========================
 
+
+const editSheetBtn = document.getElementById("editSheet");
+
+if (editUrl) {
+  editSheetBtn.onclick = () => {
+    window.open(editUrl, "_blank");
+  };
+} else {
+  editSheetBtn.style.display = "none";
+}
+
+// ==========================
+
 function unlockMedia() {
   mediaUnlocked = true;
 }
