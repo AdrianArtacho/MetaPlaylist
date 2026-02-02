@@ -102,9 +102,31 @@
       if (edit) params.set("edit", edit);
   
       const finalUrl = base.replace(/\/$/, "") + "/?" + params.toString();
-      document.getElementById("output").value = finalUrl;
+      const output = document.getElementById("output");
+      output.value = finalUrl;
+  
+      copyLink(); // auto-copy on generate
+    }
+  
+    function copyLink() {
+      const output = document.getElementById("output");
+      const status = document.getElementById("status");
+  
+      if (!output.value) {
+        status.textContent = "Nothing to copy yet.";
+        return;
+      }
+  
+      navigator.clipboard.writeText(output.value).then(() => {
+        status.textContent = "📋 Copied to clipboard!";
+        status.style.color = "#6f6";
+      }).catch(() => {
+        status.textContent = "❌ Copy failed — select and copy manually.";
+        status.style.color = "#f66";
+      });
     }
   </script>
+
 
 
 </body>
